@@ -1,0 +1,20 @@
+# Ignore Gradle files
+orm/.gradle/
+orm/gradle/
+orm/build/
+orm/bin/
+
+# Ignore Node.js modules
+db/node_modules/
+db/migrations/
+
+# Ignore environment and sensitive config files
+
+# Ignore IDE files
+.idea/
+*.iml
+.vscode/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
