@@ -9,6 +9,8 @@ db/node_modules/
 db/migrations/
 
 # Ignore environment and sensitive config files
+orm/src/main/resources/database.properties
+db/.env
 
 # Ignore IDE files
 .idea/
