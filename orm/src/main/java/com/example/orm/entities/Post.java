@@ -1,6 +1,7 @@
 package com.example.orm.entities;
 
 import com.example.orm.entities.annotations.Column;
+import com.example.orm.entities.annotations.ColumnAttribute;
 import com.example.orm.entities.annotations.Entity;
 
 @Entity(tableName = "Posts")
@@ -13,6 +14,24 @@ public class Post {
 
     @Column(name = "content")
     private String content;
+
+    // Enum for column names
+    public enum Attributes implements ColumnAttribute {
+        ID("id"),
+        USER_ID("userId"),
+        CONTENT("content");
+
+        private final String columnName;
+
+        Attributes(String columnName) {
+            this.columnName = columnName;
+        }
+
+        @Override
+        public String getColumnName() {
+            return columnName;
+        }
+    }
 
     // getters and setters
     public int getId() {

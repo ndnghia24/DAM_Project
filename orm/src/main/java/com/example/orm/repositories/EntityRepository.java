@@ -4,13 +4,18 @@ import com.example.orm.config.DatabaseConfig;
 import com.example.orm.database.ConnectionManagerFactory;
 import com.example.orm.database.IConnectionManager;
 import com.example.orm.entities.annotations.Column;
+import com.example.orm.entities.annotations.ColumnAttribute;
 import com.example.orm.entities.annotations.Entity;
+import com.example.orm.querybuilder.QueryBuilder;
+import com.example.orm.querybuilder.SQLCondition;
 
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class EntityRepository<T, ID> implements IRepository<T, ID> {
     private final Class<T> entityClass;
@@ -119,6 +124,78 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
              Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(sql);
             return mapResultSetToList(rs);
+        }
+    }
+
+    // Execute raw query
+    public static List<Map<String, Object>> executeRawQuery(String sql) throws SQLException {
+        List<Map<String, Object>> results = new ArrayList<>();
+        IConnectionManager connectionManager = ConnectionManagerFactory.getConnectionManager("postgresql");
+        
+        // Automatically add double quotes for table names
+        sql = sql.replaceAll("FROM\\s+(\\w+)", "FROM \"$1\"");
+        
+        try (Connection conn = connectionManager.getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql)) {
+            
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            
+            while (rs.next()) {
+                Map<String, Object> row = new HashMap<>();
+                for (int i = 1; i <= columnCount; i++) {
+                    String columnName = metaData.getColumnName(i);
+                    Object value = rs.getObject(i);
+                    row.put(columnName, value);
+                }
+                results.add(row);
+            }
+        }
+        
+        return results;
+    }
+
+    public ConditionBuilder<T> findWithConditions() {
+        return new ConditionBuilder<>();
+    }
+    
+    public class ConditionBuilder<E> {
+        private final QueryBuilder queryBuilder;
+    
+        public ConditionBuilder() {
+            Entity entityAnnotation = validateEntity();
+            String tableName = "\"" + entityAnnotation.tableName() + "\"";
+            this.queryBuilder = new QueryBuilder().select("*").from(tableName);
+        }
+    
+        public ConditionBuilder<E> where(ColumnAttribute column, String value) {
+            queryBuilder.where(column.getColumnName() + " = '" + value + "'");
+            return this;
+        }
+    
+        public ConditionBuilder<E> groupBy(ColumnAttribute... columnAttributes) {
+            String[] columns = new String[columnAttributes.length];
+            for (int i = 0; i < columnAttributes.length; i++) {
+                columns[i] = columnAttributes[i].getColumnName();
+            }
+            queryBuilder.groupBy(columns);
+            return this;
+        }
+    
+        public ConditionBuilder<E> having(SQLCondition condition) {
+            queryBuilder.having(condition.toString());
+            return this;
+        }
+    
+        @SuppressWarnings("unchecked")
+        public List<E> execute() throws Exception {
+            String sql = queryBuilder.build();
+            try (Connection conn = connectionManager.getConnection();
+                 Statement stmt = conn.createStatement()) {
+                ResultSet rs = stmt.executeQuery(sql);
+                return (List<E>) mapResultSetToList(rs);
+            }
         }
     }
 
