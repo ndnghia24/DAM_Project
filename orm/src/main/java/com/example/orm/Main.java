@@ -11,25 +11,20 @@ import com.example.orm.repositories.EntityRepository;
 public class Main {
     public static void main(String[] args) {
         try {
-            UserTableGateway userGateway = new UserTableGateway();
-
             User user = new User();
             user.setId(1);
             user.setUsername("JohnDoe");
             user.setPassword("password123");
-            userGateway.insert(user);
+            CustomORM.User().insert(user);
 
-            userGateway.findAll().forEach(u -> 
+            CustomORM.User().findAll().forEach(u -> 
                 System.out.println("User ID: " + u.getId() + ", Name: " + u.getUsername()));
 
-            userGateway.findById(1).ifPresent(u -> 
+            CustomORM.User().findById(1).ifPresent(u -> 
                 System.out.println("[+] Found user by Id: " + u.getUsername()));
 
-            // cannot delete because of primary key constraint
-            // userGateway.delete(1);
-
             // call findWithConditions
-            List<User> users = userGateway.findWithConditions()
+            List<User> users = CustomORM.User().findWithConditions()
                 .where(User.Attributes.USERNAME, "JohnDoe")
                 .where(User.Attributes.ID, "1")
                 .groupBy(User.Attributes.USERNAME, User.Attributes.ID)
@@ -37,7 +32,6 @@ public class Main {
                     .withOperator(">", "0"))
                 .execute();
 
-                
             // print result
             System.out.println("[+] Found users by conditions: ");
             if (users.isEmpty()) {
@@ -46,7 +40,6 @@ public class Main {
                 users.forEach(u -> 
                     System.out.println("User ID: " + u.getId() + ", Name: " + u.getUsername()));
             }
-
 
             // Raw query like call findWithConditions
             List<Map<String, Object>> results = EntityRepository.executeRawQuery(
