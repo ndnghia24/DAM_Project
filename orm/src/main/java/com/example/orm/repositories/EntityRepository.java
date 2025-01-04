@@ -8,6 +8,9 @@ import com.example.orm.entities.annotations.ColumnAttribute;
 import com.example.orm.entities.annotations.Entity;
 import com.example.orm.querybuilder.QueryBuilder;
 import com.example.orm.querybuilder.SQLCondition;
+import com.example.orm.strategies.DatabaseStrategy;
+import com.example.orm.strategies.MySQLStrategy;
+import com.example.orm.strategies.PostgreSQLStrategy;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -20,17 +23,24 @@ import java.util.HashMap;
 public class EntityRepository<T, ID> implements IRepository<T, ID> {
     private final Class<T> entityClass;
     private final IConnectionManager connectionManager;
+    private DatabaseStrategy databaseStrategy = null;
 
     public EntityRepository(Class<T> entityClass) {
         this.entityClass = entityClass;
         String dbType = DatabaseConfig.getProperty("database.type");
         this.connectionManager = ConnectionManagerFactory.getConnectionManager(dbType);
+        // based on db type
+        if (dbType.equals("postgres")) {
+            this.databaseStrategy = new PostgreSQLStrategy();
+        } else if (dbType.equals("mysql")) {
+            this.databaseStrategy = new MySQLStrategy();
+        }
     }
 
     @Override
     public void save(T entity) throws Exception {
         Entity entityAnnotation = validateEntity();
-        String tableName = "\"" + entityAnnotation.tableName() + "\"";
+        String tableName = entityAnnotation.tableName();
         List<Field> fields = new ArrayList<>();
         
         for (Field field : entityClass.getDeclaredFields()) {
@@ -39,28 +49,7 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
             }
         }
 
-        StringBuilder columns = new StringBuilder();
-        StringBuilder values = new StringBuilder();
-        for (int i = 0; i < fields.size(); i++) {
-            Column column = fields.get(i).getAnnotation(Column.class);
-            columns.append(column.name());
-            values.append("?");
-            if (i < fields.size() - 1) {
-                columns.append(", ");
-                values.append(", ");
-            }
-        }
-
-        String sql = "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + values + ") " +
-                    "ON CONFLICT (" + getPrimaryKeyField().getAnnotation(Column.class).name() + ") DO UPDATE SET ";
-        
-        for (int i = 0; i < fields.size(); i++) {
-            Column column = fields.get(i).getAnnotation(Column.class);
-            sql += column.name() + " = EXCLUDED." + column.name();
-            if (i < fields.size() - 1) {
-                sql += ", ";
-            }
-        }
+        String sql = databaseStrategy.getInsertSQL(tableName, fields);
 
         try (Connection conn = connectionManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -78,7 +67,7 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
     @Override
     public void delete(T entity) throws Exception {
         Entity entityAnnotation = validateEntity();
-        String tableName = "\"" + entityAnnotation.tableName() + "\"";
+        String tableName = formatTableName(entityAnnotation.tableName());
         Field primaryKeyField = getPrimaryKeyField();
         Column pkColumn = primaryKeyField.getAnnotation(Column.class);
         
@@ -96,7 +85,7 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
     @Override
     public Optional<T> findById(ID id) throws Exception {
         Entity entityAnnotation = validateEntity();
-        String tableName = "\"" + entityAnnotation.tableName() + "\"";
+        String tableName = formatTableName(entityAnnotation.tableName());
         Field primaryKeyField = getPrimaryKeyField();
         
         String sql = "SELECT * FROM " + tableName + " WHERE " + 
@@ -118,7 +107,7 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
     @Override
     public List<T> findAll() throws Exception {
         Entity entityAnnotation = validateEntity();
-        String tableName = "\"" + entityAnnotation.tableName() + "\"";
+        String tableName = formatTableName(entityAnnotation.tableName());
         String sql = "SELECT * FROM " + tableName;
         try (Connection conn = connectionManager.getConnection();
              Statement stmt = conn.createStatement()) {
@@ -130,14 +119,23 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
     // Execute raw query
     public static List<Map<String, Object>> executeRawQuery(String sql) throws SQLException {
         List<Map<String, Object>> results = new ArrayList<>();
-        IConnectionManager connectionManager = ConnectionManagerFactory.getConnectionManager("postgresql");
+        IConnectionManager connectionManager = ConnectionManagerFactory.getConnectionManager(DatabaseConfig.getProperty("database.type"));
         
-        // Automatically add double quotes for table names
-        sql = sql.replaceAll("FROM\\s+(\\w+)", "FROM \"$1\"");
-        
+        // strategy based on db type
+        DatabaseStrategy strategy;
+        if (connectionManager.toString().equals("PostgreSQLConnectionManager")) {
+            strategy = new PostgreSQLStrategy();
+        } else if (connectionManager.toString().equals("MySQLConnectionManager")) {
+            strategy = new MySQLStrategy();
+        } else {
+            throw new IllegalArgumentException("Unsupported database type: " + connectionManager.toString());
+        }
+
+        sql = strategy.formatTableName(sql);
+
         try (Connection conn = connectionManager.getConnection();
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(sql)) {
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
             
             ResultSetMetaData metaData = rs.getMetaData();
             int columnCount = metaData.getColumnCount();
@@ -165,7 +163,7 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
     
         public ConditionBuilder() {
             Entity entityAnnotation = validateEntity();
-            String tableName = "\"" + entityAnnotation.tableName() + "\"";
+            String tableName = formatTableName(entityAnnotation.tableName());
             this.queryBuilder = new QueryBuilder().select("*").from(tableName);
         }
     
@@ -235,5 +233,13 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
             entities.add(mapResultSetToEntity(rs));
         }
         return entities;
+    }
+
+    private String formatTableName(String tableName) {
+        if (connectionManager.toString().equals("MySQLConnectionManager")) {
+            return "`" + tableName + "`";
+        } else {
+            return "\"" + tableName + "\"";
+        }
     }
 }

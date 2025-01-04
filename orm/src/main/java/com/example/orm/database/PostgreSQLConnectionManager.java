@@ -18,6 +18,11 @@ public class PostgreSQLConnectionManager implements IConnectionManager {
     }
 
     @Override
+    public String toString() {
+        return "PostgreSQLConnectionManager";
+    }
+
+    @Override
     public Connection getConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
             connection = DriverManager.getConnection(url, username, password);

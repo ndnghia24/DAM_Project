@@ -18,6 +18,11 @@ public class MySQLConnectionManager implements IConnectionManager {
     }
 
     @Override
+    public String toString() {
+        return "MySQLConnectionManager";
+    }
+
+    @Override
     public Connection getConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
             connection = DriverManager.getConnection(url, username, password);
