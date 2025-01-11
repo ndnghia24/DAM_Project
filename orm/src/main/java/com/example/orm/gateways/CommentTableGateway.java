@@ -2,6 +2,7 @@ package com.example.orm.gateways;
 
 import java.util.List;
 import java.util.Optional;
+
 import com.example.orm.entities.Comment;
 import com.example.orm.repositories.EntityRepository;
 import com.example.orm.repositories.EntityRepository.ConditionBuilder;
@@ -68,3 +69,9 @@ public class CommentTableGateway implements ITableGateway<Comment> {
             .execute();
     }
 }
+
+// public interface CommentTableGateway extends ITableGateway<Comment> {
+//     List<Comment> findByPostId(int postId) throws Exception;
+//     List<Comment> findByUserId(String userId) throws Exception;
+//     List<Comment> findByContent(String content) throws Exception;
+// }

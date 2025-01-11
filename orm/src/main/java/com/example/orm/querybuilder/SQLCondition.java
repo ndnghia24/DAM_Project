@@ -3,7 +3,7 @@ package com.example.orm.querybuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.example.orm.entities.annotations.ColumnAttribute;
+import com.example.orm.annotations.ColumnAttribute;
 
 public class SQLCondition {
     private final String function;

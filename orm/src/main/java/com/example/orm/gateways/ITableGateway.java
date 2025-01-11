@@ -13,3 +13,5 @@ public interface ITableGateway<T> {
     List<T> findAll() throws Exception;
     EntityRepository<T, Integer>.ConditionBuilder<T> findWithConditions();
 }
+
+//fasdfasdfasdfsa//

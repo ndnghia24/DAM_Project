@@ -1,8 +1,9 @@
 package com.example.orm.entities;
 
-import com.example.orm.entities.annotations.Column;
-import com.example.orm.entities.annotations.ColumnAttribute;
-import com.example.orm.entities.annotations.Entity;
+import com.example.orm.annotations.Column;
+import com.example.orm.annotations.ColumnAttribute;
+import com.example.orm.annotations.Entity;
+import com.example.orm.annotations.OneToMany;
 
 @Entity(tableName = "Users")
 public class User {
@@ -10,6 +11,7 @@ public class User {
     private int id;
 
     @Column(name = "username")
+    @OneToMany(mappedBy = "userId", targetEntity = "Comment")
     private String username;
 
     @Column(name = "password")

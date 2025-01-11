@@ -1,4 +1,4 @@
-package com.example.orm.entities.annotations;
+package com.example.orm.annotations;
 
 public interface ColumnAttribute {
     String getColumnName();

@@ -1,29 +1,41 @@
 package com.example.orm.repositories;
 
-import com.example.orm.config.DatabaseConfig;
-import com.example.orm.database.ConnectionManagerFactory;
-import com.example.orm.database.IConnectionManager;
-import com.example.orm.entities.annotations.Column;
-import com.example.orm.entities.annotations.ColumnAttribute;
-import com.example.orm.entities.annotations.Entity;
-import com.example.orm.querybuilder.QueryBuilder;
-import com.example.orm.querybuilder.SQLCondition;
-import com.example.orm.strategies.DatabaseStrategy;
-import com.example.orm.strategies.MySQLStrategy;
-import com.example.orm.strategies.PostgreSQLStrategy;
-
 import java.lang.reflect.Field;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ArrayList;
-import java.util.HashMap;
+
+import com.example.orm.annotations.Column;
+import com.example.orm.annotations.ColumnAttribute;
+import com.example.orm.annotations.Entity;
+import com.example.orm.config.DatabaseConfig;
+import com.example.orm.database.ConnectionManagerFactory;
+import com.example.orm.database.IConnectionManager;
+import com.example.orm.querybuilder.QueryBuilder;
+import com.example.orm.querybuilder.SQLCondition;
+import com.example.orm.relationManager.DeleteRelationManager;
+import com.example.orm.relationManager.InsertRelationManager;
+import com.example.orm.relationManager.SaveRelationManager;
+import com.example.orm.strategies.DatabaseStrategy;
+import com.example.orm.strategies.MySQLStrategy;
+import com.example.orm.strategies.PostgreSQLStrategy;
 
 public class EntityRepository<T, ID> implements IRepository<T, ID> {
     private final Class<T> entityClass;
     private final IConnectionManager connectionManager;
     private DatabaseStrategy databaseStrategy = null;
+    private final DeleteRelationManager<T, ID> deleteRelationManager = new DeleteRelationManager<>(this);
+    private final InsertRelationManager<T, ID> insertRelationManager = new InsertRelationManager<>(this);
+    private final SaveRelationManager<T, ID> saveRelationManager = new SaveRelationManager<>(this);
+    
 
     public EntityRepository(Class<T> entityClass) {
         this.entityClass = entityClass;
@@ -39,6 +51,13 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
 
     @Override
     public void save(T entity) throws Exception {
+        try {
+            saveRelationManager.checkRelationsBeforeSave(entity);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return;
+        }
+
         Entity entityAnnotation = validateEntity();
         String tableName = entityAnnotation.tableName();
         List<Field> fields = new ArrayList<>();
@@ -66,6 +85,13 @@ public class EntityRepository<T, ID> implements IRepository<T, ID> {
 
     @Override
     public void delete(T entity) throws Exception {
+        try {
+            deleteRelationManager.checkRelationsBeforeDelete(entity);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return;
+        }
+
         Entity entityAnnotation = validateEntity();
         String tableName = formatTableName(entityAnnotation.tableName());
         Field primaryKeyField = getPrimaryKeyField();

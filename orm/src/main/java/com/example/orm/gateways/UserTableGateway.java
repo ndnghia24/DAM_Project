@@ -2,6 +2,7 @@ package com.example.orm.gateways;
 
 import java.util.List;
 import java.util.Optional;
+
 import com.example.orm.entities.User;
 import com.example.orm.repositories.EntityRepository;
 
@@ -60,3 +61,8 @@ public class UserTableGateway implements ITableGateway<User> {
         return !users.isEmpty();
     }
 }
+
+// public interface UserTableGateway extends ITableGateway<User> {
+//     List<User> findByUsername(String username) throws Exception;
+//     boolean exists(String username) throws Exception;
+// }

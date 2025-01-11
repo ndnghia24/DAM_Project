@@ -1,8 +1,8 @@
 package com.example.orm;
 
-import com.example.orm.gateways.UserTableGateway;
-import com.example.orm.gateways.PostTableGateway;
 import com.example.orm.gateways.CommentTableGateway;
+import com.example.orm.gateways.PostTableGateway;
+import com.example.orm.gateways.UserTableGateway;
 
 public class CustomORM {
     private static CustomORM instance;

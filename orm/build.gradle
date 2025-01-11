@@ -3,15 +3,91 @@ plugins {
     id 'application'
 }
 
+group 'com.example'
+version '1.0-SNAPSHOT'
+description 'Annotation Processing Demo'
+
+/**
+ * Thiết lập version Java (thay đổi tùy môi trường)
+ */
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    // -----------------------------
+    // Database drivers
+    // -----------------------------
     implementation 'org.postgresql:postgresql:42.2.20'
     implementation 'mysql:mysql-connector-java:8.0.33'
+
+    // -----------------------------
+    // Annotation Processor (AutoService)
+    // -----------------------------
+    // Trong hầu hết các trường hợp, ta dùng compileOnly + annotationProcessor
+    // để chỉ sử dụng auto-service cho quá trình build-time
+    compileOnly 'com.google.auto.service:auto-service:1.1.0'
+    annotationProcessor 'com.google.auto.service:auto-service:1.1.0'
+
+    // -----------------------------
+    // Thư viện Reflection (nếu cần)
+    // -----------------------------
+    implementation 'org.reflections:reflections:0.10.2'
+
+    // -----------------------------
+    // Logging
+    // -----------------------------
+    implementation 'ch.qos.logback:logback-classic:1.4.7'
 }
 
+/**
+ * Bảo đảm Gradle dùng đúng cấu hình annotationProcessor cho quá trình compile
+ */
+tasks.withType(JavaCompile).configureEach { 
+    // Nếu muốn truyền thêm tham số cho compiler thì thêm vào đây:
+    // options.compilerArgs << '-XprintRounds'  // Ví dụ in thông tin annotation processing
+    
+    // Đảm bảo Gradle biết annotationProcessorPath
+    options.annotationProcessorPath = configurations.annotationProcessor
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-XprintRounds'
+    options.compilerArgs << '-XprintProcessorInfo'
+}
+
+/**
+ * Nếu bạn muốn sinh code (source generated) ra thư mục `build/generated/sources/annotationProcessor/java/main`,
+ * Gradle sẽ tự động thêm đường dẫn này. Thông thường, ta không cần chỉnh sửa quá nhiều 
+ * nếu project không có yêu cầu đặc biệt.
+ */
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', 'build/generated/sources/annotationProcessor/java/main']
+        }
+    }
+}
+
+/**
+ * Nếu muốn dọn dẹp file Java được tạo bởi annotation processing 
+ * khi chạy gradle clean, có thể thêm task sau:
+ */
+task cleanGenerated(type: Delete) {
+    delete fileTree(dir: 'build/generated/sources/annotationProcessor/', include: '**/*.java')
+}
+
+clean.dependsOn(cleanGenerated)
+
+/**
+ * Cấu hình ứng dụng, chỉ cần trỏ tới mainClass
+ */
 application {
-    mainClassName = 'com.example.orm.Main'
+    mainClass = 'com.example.orm.Main'
 }

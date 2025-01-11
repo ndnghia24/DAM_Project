@@ -1,8 +1,9 @@
 package com.example.orm.entities;
 
-import com.example.orm.entities.annotations.Column;
-import com.example.orm.entities.annotations.ColumnAttribute;
-import com.example.orm.entities.annotations.Entity;
+import com.example.orm.annotations.Column;
+import com.example.orm.annotations.ColumnAttribute;
+import com.example.orm.annotations.Entity;
+import com.example.orm.annotations.ManyToOne;
 
 @Entity(tableName = "Posts")
 public class Post {
@@ -10,6 +11,7 @@ public class Post {
     private int id;
 
     @Column(name = "userId")
+    @ManyToOne(mappedBy = "id", targetEntity = "User")
     private String userId;
 
     @Column(name = "content")

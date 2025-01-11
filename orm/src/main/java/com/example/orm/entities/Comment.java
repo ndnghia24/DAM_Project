@@ -1,8 +1,9 @@
 package com.example.orm.entities;
 
-import com.example.orm.entities.annotations.Column;
-import com.example.orm.entities.annotations.ColumnAttribute;
-import com.example.orm.entities.annotations.Entity;
+import com.example.orm.annotations.Column;
+import com.example.orm.annotations.ColumnAttribute;
+import com.example.orm.annotations.Entity;
+import com.example.orm.annotations.ManyToOne;
 
 @Entity(tableName = "Comments")
 public class Comment {
@@ -10,10 +11,12 @@ public class Comment {
     private int id;
 
     @Column(name = "postId")
+    @ManyToOne(mappedBy = "id", targetEntity = "Post")
     private int postId;
 
     @Column(name = "userId")
-    private String userId;
+    @ManyToOne(mappedBy = "username", targetEntity = "User")
+    private int userId;
 
     @Column(name = "content")
     private String content;
@@ -54,11 +57,11 @@ public class Comment {
         this.postId = postId;
     }
 
-    public String getUserId() {
+    public int getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(int userId) {
         this.userId = userId;
     }
 

@@ -3,7 +3,7 @@ package com.example.orm.strategies;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import com.example.orm.entities.annotations.Column;
+import com.example.orm.annotations.Column;
 
 public class PostgreSQLStrategy implements DatabaseStrategy {
     @Override

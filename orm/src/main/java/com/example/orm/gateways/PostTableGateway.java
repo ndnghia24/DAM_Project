@@ -2,6 +2,7 @@ package com.example.orm.gateways;
 
 import java.util.List;
 import java.util.Optional;
+
 import com.example.orm.entities.Post;
 import com.example.orm.repositories.EntityRepository;
 import com.example.orm.repositories.EntityRepository.ConditionBuilder;
@@ -62,3 +63,8 @@ public class PostTableGateway implements ITableGateway<Post> {
             .execute();
     }
 }
+
+// public interface PostTableGateway extends ITableGateway<Post> {
+//     List<Post> findByUserId(String userId) throws Exception;
+//     List<Post> findByContent(String content) throws Exception;
+// }
