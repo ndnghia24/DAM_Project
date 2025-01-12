@@ -15,7 +15,7 @@ public class Main {
             user.setId(1);
             user.setUsername("JohnDoe");
             user.setPassword("password123");
-            CustomORM.User().insert(user);
+            CustomORM.getGateway(Entity.User).insert(user);
             System.out.println("\nInserted User: " + user.getUsername());
 
             User user2 = new User();

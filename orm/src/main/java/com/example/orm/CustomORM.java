@@ -1,8 +1,15 @@
 package com.example.orm;
 
 import com.example.orm.gateways.CommentTableGateway;
+import com.example.orm.gateways.ITableGateway;
 import com.example.orm.gateways.PostTableGateway;
 import com.example.orm.gateways.UserTableGateway;
+
+enum Entity {
+    User,
+    Post,
+    Comment
+}
 
 public class CustomORM {
     private static CustomORM instance;
@@ -19,9 +26,32 @@ public class CustomORM {
             instance = new CustomORM();
         }
         return instance;
-    }
+        }
 
-    public static UserTableGateway User() {
+        public static ITableGateway getGateway(Entity entity) {
+        CustomORM orm = getInstance();
+        switch (entity) {
+            case User:
+            if (orm.userGateway == null) {
+                orm.userGateway = new UserTableGateway();
+            }
+            return orm.userGateway;
+            case Post:
+            if (orm.postGateway == null) {
+                orm.postGateway = new PostTableGateway();
+            }
+            return orm.postGateway;
+            case Comment:
+            if (orm.commentGateway == null) {
+                orm.commentGateway = new CommentTableGateway();
+            }
+            return orm.commentGateway;
+            default:
+            return null;
+        }
+        }
+
+        public static UserTableGateway User() {
         CustomORM orm = getInstance();
         if (orm.userGateway == null) {
             orm.userGateway = new UserTableGateway();
